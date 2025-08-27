@@ -34,7 +34,7 @@ connectDB()
 
 
 
-            // first aproch 
+            //  ------------- || first aproch for connect Data base || ----------------
 // (async()=>{
 //     try {
 //         mongoose.connect(`${process.env.MONGODB_URL}/${DB_NAME}`)
