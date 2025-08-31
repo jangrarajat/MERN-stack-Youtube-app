@@ -17,12 +17,10 @@ const registerUser = asyncHandler(async (req, res) => {
   // check for user creation 
   //  return response 
 
-
-
+ 
   //get user details from rountend 
   const { fullname, email, username, password } = req.body
-  console.log(fullname, email, username, password)
-
+ 
 
 
 
@@ -39,7 +37,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 
   //check if user already exiest : username , email
-  const exiestUser = User.findOne({
+  const exiestUser = await User.findOne({
     $or: [{ username }, { email }]
   })
 
@@ -49,7 +47,12 @@ const registerUser = asyncHandler(async (req, res) => {
 
 
   const avatarLocalPath = req.files?.avatar[0]?.path
-  const coverImageLocalPath = req.files?.coverImage[0]?.path
+  
+  let coverImageLocalPath;
+  if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
+    coverImageLocalPath = req.files.coverImage[0].path
+  }
+
 
   if (!avatarLocalPath) {
     throw new ApiError(400, "avatar file is required")
