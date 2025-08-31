@@ -26,5 +26,4 @@ router.route("/logout").post(verifyJwt,loggoutUser)
 router.route("/refresh-token").post(refreshAccessToken)
 
 
-
 export default router
