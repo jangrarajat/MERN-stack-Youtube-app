@@ -6,6 +6,26 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 
 
 
+const generateAccessRefreshToken = async (userId) => {
+  try {
+    const user = await User.findById(userId)
+    const accessToken = user.generateAccessToken()
+    const refreshToken = user.generateRefreshToken()
+
+    user.refreshToken = refreshToken
+    user.save({ validateBeforeSave: true })
+
+    return { accessToken, refreshToken }
+
+
+  } catch (error) {
+    throw new ApiError(500, "somthing want wrong  generateAccessRefreshToken error")
+  }
+}
+
+
+
+
 const registerUser = asyncHandler(async (req, res) => {
   //get user details from rountend 
   // validation -- not empty
@@ -17,10 +37,10 @@ const registerUser = asyncHandler(async (req, res) => {
   // check for user creation 
   //  return response 
 
- 
+
   //get user details from rountend 
   const { fullname, email, username, password } = req.body
- 
+
 
 
 
@@ -47,7 +67,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 
   const avatarLocalPath = req.files?.avatar[0]?.path
-  
+
   let coverImageLocalPath;
   if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
     coverImageLocalPath = req.files.coverImage[0].path
@@ -91,4 +111,94 @@ const registerUser = asyncHandler(async (req, res) => {
 
 })
 
-export { registerUser }
+
+//-----Login User -----
+const loginUser = asyncHandler(async (req, res) => {
+  //get data from req.body
+  //  username or email 
+  // find the user
+  //password check
+  // access and refresh token
+  // send cookie
+
+  if (!req.body) {
+    throw new ApiError(400, "Request body is missing. Make sure you are sending JSON and using express.json() middleware.");
+  }
+  const { email, username, password } = req.body;
+  if ((!username && !email) || !password) {
+    throw new ApiError(400, "Username/email and password are required");
+  }
+
+  const user = await User.findOne({
+    $or: [
+      ...(username ? [{ username }] : []),
+      ...(email ? [{ email }] : [])
+    ]
+  });
+
+  if (!user) {
+    throw new ApiError(404, "User does not exist");
+  }
+
+  const isPasswordValid = await user.isPasswordCorrect(password);
+
+  if (!isPasswordValid) {
+    throw new ApiError(401, "Invalid user password");
+  }
+
+  const { accessToken, refreshToken } = await generateAccessRefreshToken(user._id);
+
+  // Fetch user data without password and refreshToken
+  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+
+  const options = {
+    httpOnly: true,
+    secure: true
+  };
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(200,
+        {
+          user: loggedInUser, accessToken, refreshToken
+        },
+        "User logged in successfully"
+      )
+    );
+
+})
+
+const loggoutUser = asyncHandler(async (req, res) => {
+
+  await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        refreshToken: undefined
+      }
+
+    },
+    {
+      new: true
+    }
+  )
+
+  const options = {
+    httpOnly: true,
+    secure: true
+  }
+
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json({ message: "User logged out successfully" });
+})
+
+
+
+
+export { registerUser, loginUser, loggoutUser }
