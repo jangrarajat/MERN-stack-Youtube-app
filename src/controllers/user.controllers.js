@@ -178,8 +178,8 @@ const loggoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
     {
-      $set: {
-        refreshToken: undefined
+      $unset: {
+        refreshToken: 1
       }
 
     },
@@ -252,7 +252,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 // --------change password ----------
 const changeCurrentPassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body
-  const user = User.findById(req.user?._id)
+  const user = await User.findById(req.user?._id)
   const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
 
   if (!isPasswordCorrect) {
@@ -274,7 +274,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 const getCurrentUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
-    .json(200, req.user, "current user fetched successfully")
+    .json(new ApiResponse(200, req.user, "User featched successfully"))
 })
 
 // -------------update user dietals ---------
@@ -288,7 +288,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
   }
 
 
-  const user = User.findByIdAndUpdate(req.user._id,
+  const user = await User.findByIdAndUpdate(req.user._id,
     {
       $set: {
         fullname: fullname,
@@ -412,7 +412,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
           $size: "$subscribers"
         },
         channelsSubscribedToCount: {
-          $size: "subscribedTO"
+          $size: "$subscribedTO"
         },
         isSubscribed: {
           $cond: {
@@ -429,11 +429,11 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         fullname: 1,
         username: 1,
         subscribersCount: 1,
-        channelsSubscribedToCount:1,
-        isSubscribedz:1,
-        avatar:1,
-        coverImage:1,
-        email:1
+        channelsSubscribedToCount: 1,
+        isSubscribedz: 1,
+        avatar: 1,
+        coverImage: 1,
+        email: 1
 
       }
     }
@@ -441,7 +441,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 
 
   if (!channel?.length) {
-    throw ApiError(404, "channel dose not exist")
+    throw new ApiError(404, "channel dose not exist")
   }
 
 
@@ -491,9 +491,9 @@ const getWatchHistory = asyncHandler(async (req, res) => {
             }
           },
           {
-            $addFields:{
-              owner:{
-                $first:"$owner"
+            $addFields: {
+              owner: {
+                $first: "$owner"
               }
             }
           }
@@ -503,15 +503,15 @@ const getWatchHistory = asyncHandler(async (req, res) => {
 
   ])
 
- return res
- .status(200)
- .json(
-  new ApiResponse(
-    200,
-    user[0].watchHistory,
-    "Watch history featched successfully"
-  )
- )
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        user[0].watchHistory,
+        "Watch history featched successfully"
+      )
+    )
 
 })
 

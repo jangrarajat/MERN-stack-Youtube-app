@@ -31,7 +31,7 @@ router.route("/current-user").get(verifyJwt, getCurrentUser)
 
 router.route("/update-account").patch(verifyJwt, updateAccountDetails)
 
-router.route("/update-avatar").patch(verifyJwt, upload.single("avater"), updateUserAvatar)
+router.route("/update-avatar").patch(verifyJwt, upload.single("avatar"), updateUserAvatar)
 
 router.route("/update-cover-image").patch(verifyJwt, upload.single("coverImage"), updateUserCoverImage)
 
