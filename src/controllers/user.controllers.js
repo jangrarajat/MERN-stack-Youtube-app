@@ -1,6 +1,7 @@
 import { asyncHandler } from "../utils/asynchandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js"
+import { Subsciption } from "../models/subscraption.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken"
@@ -376,6 +377,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 
 //  -----------get   channel profile----------------
 const getUserChannelProfile = asyncHandler(async (req, res) => {
+  // console.log(req)
   const { username } = req.params
 
   if (!username) {
@@ -430,7 +432,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         username: 1,
         subscribersCount: 1,
         channelsSubscribedToCount: 1,
-        isSubscribedz: 1,
+        isSubscribed: 1,
         avatar: 1,
         coverImage: 1,
         email: 1
@@ -445,7 +447,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   }
 
 
-  console.log(channel)
+  // console.log(channel)
 
 
   return res.status(200)
@@ -516,6 +518,79 @@ const getWatchHistory = asyncHandler(async (req, res) => {
 })
 
 
+//-------------- subscribe channel--------------
+const subsciptionsChannel = asyncHandler(async (req, res) => {
+  const subscibedFrom = req.user._id
+  const subscibedTo = req.body.subscibedTo
+
+
+
+  // 1. Already subscribed check
+  const alreadySubscribed = await Subsciption.findOne({
+    subscriber: subscibedFrom,
+    channel: subscibedTo
+  });
+
+
+  if (alreadySubscribed) {
+    throw new ApiError(409, "All ready Subscribed");
+  }
+
+
+  //  2. check channel exiest
+  const channel = await User.findOne({
+    _id: subscibedTo
+  });
+
+  if (!channel) {
+    throw new ApiError(409, "Channel not exist")
+
+  }
+
+
+  // 3.not subscribe yourSelf
+  if (subscibedFrom.toString() === subscibedTo.toString()) {
+    throw new ApiError(400, "Cannot subscribe yourSelf")
+  }
+
+
+  // 4. channel is required
+  if (!subscibedTo) {
+    throw new ApiError(400, "SubscribedTO is required")
+  }
+
+  await Subsciption.create({
+    subscriber: req.user._id,
+    channel: subscibedTo
+  })
+
+  return res.status(201).json(new ApiResponse(200, "follow successfully"))
+})
+
+//-------------- Unsubscribe channel ---------------
+const unSubscribeChannel = asyncHandler(async (req, res) => {
+  const subscibedFrom = req.user._id
+  const subscibedTo = req.body.subscibedTo
+
+  if (!subscibedTo) {
+    throw new ApiError(409, "Channel is Required")
+  }
+
+  const deleted = await Subsciption.findOneAndDelete({
+    subscriber: subscibedFrom.toString(),
+    channel: subscibedTo.toString()
+  })
+
+  if (!deleted) {
+    throw new ApiError(404, "Not Subscribed");
+  }
+
+
+  return res.status(200).json(new ApiResponse(200, "UnSubscribe successfully"))
+
+})
+
+
 
 export {
   registerUser,
@@ -528,5 +603,7 @@ export {
   updateUserAvatar,
   updateUserCoverImage,
   getUserChannelProfile,
-  getWatchHistory
+  getWatchHistory,
+  subsciptionsChannel,
+  unSubscribeChannel
 }
