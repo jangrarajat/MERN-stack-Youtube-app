@@ -53,7 +53,12 @@ const registerUser = asyncHandler(async (req, res) => {
       field?.trim() === ""
     )
   ) {
-    throw new ApiError(400, "fullname is required")
+    res.status(400)
+      .json({
+        success: false,
+        message: "fullname is required"
+      })
+
   }
 
 
@@ -64,7 +69,12 @@ const registerUser = asyncHandler(async (req, res) => {
   })
 
   if (exiestUser) {
-    throw new ApiError(409, "user with email or username already exiest ")
+    res.status(400)
+      .json({
+        success: false,
+        message: "user with email or username already exiest "
+      })
+    // throw new ApiError(400, "user with email or username already exiest ")
   }
 
 
@@ -77,7 +87,13 @@ const registerUser = asyncHandler(async (req, res) => {
 
 
   if (!avatarLocalPath) {
-    throw new ApiError(400, "avatar file is required")
+    res
+      .status(400)
+      .json({
+        success: false,
+        message: "avatar file is required"
+      })
+
   }
 
   //  upload them to cloudinary
@@ -85,7 +101,12 @@ const registerUser = asyncHandler(async (req, res) => {
   const coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
   if (!avatar) {
-    throw new ApiError(400, "Avtar file is required")
+    res
+      .status(400)
+      .json({
+        success: false,
+        message: "Avtar file is required"
+      })
   }
 
   // create user object -- create entry in db
@@ -105,12 +126,22 @@ const registerUser = asyncHandler(async (req, res) => {
     "-password -refreshToken"
   )
   if (!createdUser) {
-    throw new ApiError(500, "Somthing want wrong while registering the user")
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Somthing want wrong while registering the user"
+      })
   }
 
 
-  return res.status(201).json(new ApiResponse(200, createdUser, "User registerd Successfully"))
-
+  return res
+    .status(201)
+    .json({
+      success: true,
+      createdUser,
+      message: "User registerd Successfully"
+    })
 })
 
 
@@ -124,11 +155,21 @@ const loginUser = asyncHandler(async (req, res) => {
   // send cookie
 
   if (!req.body) {
-    throw new ApiError(400, "Request body is missing. Make sure you are sending JSON and using express.json() middleware.");
+    res
+      .status(400)
+      .json({
+        success: false,
+        message: "Request body is missing. Make sure you are sending JSON and using express.json() middleware."
+      })
   }
   const { email, username, password } = req.body;
   if ((!username && !email) || !password) {
-    throw new ApiError(400, "Username/email and password are required");
+    res
+      .status(400)
+      .json({
+        success: false,
+        message: "Username/email and password are required"
+      })
   }
 
   const user = await User.findOne({
@@ -139,13 +180,25 @@ const loginUser = asyncHandler(async (req, res) => {
   });
 
   if (!user) {
-    throw new ApiError(404, "User does not exist");
+    res
+      .status(404)
+      .json({
+        success: false,
+        message: "User does not exist"
+      })
+
   }
 
   const isPasswordValid = await user.isPasswordCorrect(password);
 
   if (!isPasswordValid) {
-    throw new ApiError(401, "Invalid user password");
+    res
+      .status(401)
+      .json({
+        success: false,
+        message: "Invalid user password"
+      })
+
   }
 
   const { accessToken, refreshToken } = await generateAccessRefreshToken(user._id);
@@ -162,14 +215,11 @@ const loginUser = asyncHandler(async (req, res) => {
     .status(200)
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
-    .json(
-      new ApiResponse(200,
-        {
-          user: loggedInUser, accessToken, refreshToken
-        },
-        "User logged in successfully"
-      )
-    );
+    .json({
+      success: false,
+      user: loggedInUser, accessToken, refreshToken,
+      message: "User logged in successfully"
+    });
 
 })
 
@@ -206,7 +256,12 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingRefreshToken = req.cookies?.refreshToken || req.body.refreshToken;
 
   if (!incomingRefreshToken) {
-    throw new ApiError(401, "unauthorized request")
+    res
+      .status(401)
+      .json({
+        success: false,
+        message: "unauthorized request"
+      })
   }
 
   try {
@@ -218,11 +273,23 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     const user = await User.findById(decodedToken?._id)
 
     if (!user) {
-      throw new ApiError(401, "Invalid refresh Token")
+      res
+        .status(401)
+        .json({
+          success: false,
+          message: "Invalid refresh Token"
+        })
+
     }
 
     if (incomingRefreshToken !== user?.refreshToken) {
-      throw new ApiError(401, "refresh token is requrid")
+      res
+        .status(401)
+        .json({
+          success: false,
+          message: "refresh token is requrid"
+        })
+
     }
 
     const options = {
@@ -236,17 +303,18 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       .status(200)
       .cookie("accessToken", accessToken, options)
       .cookie("refreshToken", newRefreshToken, options)
-      .json(
-        new ApiResponse(
-          200,
-          {
-            accessToken, refreshToken: newRefreshToken
-          },
-          "Access token refreshd Successfully"
-        )
-      )
+      .json({
+        accessToken, refreshToken: newRefreshToken,
+        message: "Access token refreshd Successfully"
+      })
   } catch (error) {
-    throw new ApiError(401, error?.message || "refreshToken error ")
+    res
+      .status(401)
+      .json({
+        success: false,
+        message: error?.message || "refreshToken error "
+      })
+
   }
 })
 
