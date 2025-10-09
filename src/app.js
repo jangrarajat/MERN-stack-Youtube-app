@@ -2,6 +2,7 @@ import express from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser"
 import userRouter from './routes/user.routes.js'
+import videoRouter from './routes/video.routes.js'
 import dotenv from "dotenv";
 dotenv.config();
 const app = express()
@@ -18,6 +19,7 @@ app.use(cookieParser())
 
 // Routes
 app.use('/api/v1/users',userRouter)
+app.use('/api/v1/video',videoRouter)
 
 
 
