@@ -8,6 +8,10 @@ const videoSchema = new Schema({
         required: true,
 
     },
+     secure_url:{
+        type :String,
+        required:true
+     },
    thumbnail_public_id: {
         type: String,
         required: true,

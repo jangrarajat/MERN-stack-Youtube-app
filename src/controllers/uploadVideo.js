@@ -10,7 +10,7 @@ const uploadVideo = asyncHandler(async (req, res) => {
     try {
         console.log("📁 req.file:", req.files); // Debug karo
         console.log("📁 req.body:", req.body); // Debug karo
-
+        
         if (!req.files) return res.status(400).json({ error: 'No file uploaded' });
 
         const thumbnailLocalPath = req.files?.thumbnail[0]?.path
@@ -27,11 +27,12 @@ const uploadVideo = asyncHandler(async (req, res) => {
             message: "thumbnail and video cloud uplaod failed"
         })
 
-        if (thumbnail && video) { console.log("cloudinaty file uplaoding success") }
+        if (thumbnail && video) { console.log("cloudinaty file uplaoding success" , video) }
 
         const uploadVideo = await Video.create({
 
             playback_url: video.playback_url,
+            secure_url:video.secure_url,
             thumbnail_public_id: thumbnail.public_id,
             video_public_id: video.public_id,
             format: video.format,
@@ -78,7 +79,11 @@ const uploadVideo = asyncHandler(async (req, res) => {
 const deleteVideo = asyncHandler(async (req, res) => {
 
     const { thumbnail_public_id, video_public_id } = req.body
-    const owner_id = req.user._id
+
+    if(!thumbnail_public_id && !video_public_id) return  res.status(400).json({success:false,message:" thumbnail_public_id and video_public_id is requried"})
+
+
+    
     if (!thumbnail_public_id && !video_public_id) return res.status(400).json({ success: false, message: "thumbnail_public_id ,video_public_id , owner_id required" })
 
     const deleteThumbnailResponse = await deleteImageOnCloudinary(thumbnail_public_id)
@@ -105,9 +110,14 @@ const deleteVideo = asyncHandler(async (req, res) => {
 //  tempreary thumbnail preview upload
 const tempUpload = asyncHandler(async (req, res) => {
 
+    if (!req.file) return res.status(400)
+        .json({
+            success: false,
+            message:"thumbnail image is required"
+        })
+
     try {
         const response = await uploadOnCloudinary(req.file.path)
-
 
         res.status(200)
             .json({
@@ -129,19 +139,26 @@ const tempUpload = asyncHandler(async (req, res) => {
 // delete tempreary thumbnail preview
 const deleteTempPreview = asyncHandler(async (req, res) => {
     const public_id = req.body.public_id
+
+    if (!public_id) return res.status(400)
+        .json({
+            success: false,
+            message: "public_id is requried"
+        })
+
     try {
-        const response = deleteImageOnCloudinary(public_id)
+        const response = await deleteImageOnCloudinary(public_id)
         console.log(response)
         res.status(200)
             .json({
                 success: true,
-                message:"Delete preview thumbnail Successfully"
+                message: "Delete preview thumbnail Successfully"
             })
     } catch (error) {
         res.status(400)
             .json({
                 success: false,
-                message:"Delete preview thumbnail Failed"
+                message: "Delete preview thumbnail Failed"
             })
     }
 })
