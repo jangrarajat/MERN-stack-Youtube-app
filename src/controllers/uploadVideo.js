@@ -10,7 +10,7 @@ const uploadVideo = asyncHandler(async (req, res) => {
     try {
         console.log("📁 req.file:", req.files); // Debug karo
         console.log("📁 req.body:", req.body); // Debug karo
-        
+
         if (!req.files) return res.status(400).json({ error: 'No file uploaded' });
 
         const thumbnailLocalPath = req.files?.thumbnail[0]?.path
@@ -27,12 +27,12 @@ const uploadVideo = asyncHandler(async (req, res) => {
             message: "thumbnail and video cloud uplaod failed"
         })
 
-        if (thumbnail && video) { console.log("cloudinaty file uplaoding success" , video) }
+        if (thumbnail && video) { console.log("cloudinaty file uplaoding success", video) }
 
         const uploadVideo = await Video.create({
 
             playback_url: video.playback_url,
-            secure_url:video.secure_url,
+            secure_url: video.secure_url,
             thumbnail_public_id: thumbnail.public_id,
             video_public_id: video.public_id,
             format: video.format,
@@ -75,15 +75,48 @@ const uploadVideo = asyncHandler(async (req, res) => {
 })
 
 
+//   get all videos 
+const getAllVideos = asyncHandler(async (req, res) => {
+
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
+
+        const total = await Video.countDocuments()
+
+        const videos = await Video.find()
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+
+
+        res.status(200).json({
+            success: true,
+            currentPage: page,
+            totalVideos: total,
+            totalPages: Math.ceil(total / limit),
+            videos,
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: "Error fetching videos",
+            error: error.message,
+        });
+    }
+  
+})
+
 //   delete  Video 
 const deleteVideo = asyncHandler(async (req, res) => {
 
     const { thumbnail_public_id, video_public_id } = req.body
 
-    if(!thumbnail_public_id && !video_public_id) return  res.status(400).json({success:false,message:" thumbnail_public_id and video_public_id is requried"})
+    if (!thumbnail_public_id && !video_public_id) return res.status(400).json({ success: false, message: " thumbnail_public_id and video_public_id is requried" })
 
 
-    
+
     if (!thumbnail_public_id && !video_public_id) return res.status(400).json({ success: false, message: "thumbnail_public_id ,video_public_id , owner_id required" })
 
     const deleteThumbnailResponse = await deleteImageOnCloudinary(thumbnail_public_id)
@@ -113,7 +146,7 @@ const tempUpload = asyncHandler(async (req, res) => {
     if (!req.file) return res.status(400)
         .json({
             success: false,
-            message:"thumbnail image is required"
+            message: "thumbnail image is required"
         })
 
     try {
@@ -165,4 +198,4 @@ const deleteTempPreview = asyncHandler(async (req, res) => {
 
 
 
-export { uploadVideo, deleteVideo, tempUpload, deleteTempPreview }
+export { uploadVideo, getAllVideos, deleteVideo, tempUpload, deleteTempPreview }

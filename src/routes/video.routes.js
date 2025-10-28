@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { upload } from "../middlewares/multer.js";
 import { verifyJwt } from "../middlewares/auth.middleware.js";
-import {uploadVideo , deleteVideo, tempUpload, deleteTempPreview} from '../controllers/uploadVideo.js'
+import {uploadVideo,getAllVideos , deleteVideo, tempUpload, deleteTempPreview} from '../controllers/uploadVideo.js'
 const router = Router()
 
 router.route('/upload').post(upload.fields([
@@ -11,6 +11,8 @@ router.route('/upload').post(upload.fields([
 
 
 router.route('/delete').delete(verifyJwt,deleteVideo)
+
+router.route('/allVideos').get(verifyJwt,getAllVideos)
 
 router.route('/preview/image').post(upload.single('thumbnail'),tempUpload)
 
