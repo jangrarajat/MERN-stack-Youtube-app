@@ -12,7 +12,7 @@ router.route('/upload').post(upload.fields([
 
 router.route('/delete').delete(verifyJwt,deleteVideo)
 
-router.route('/allVideos').get(verifyJwt,getAllVideos)
+router.route('/allVideos').get(getAllVideos)
 
 router.route('/preview/image').post(upload.single('thumbnail'),tempUpload)
 
