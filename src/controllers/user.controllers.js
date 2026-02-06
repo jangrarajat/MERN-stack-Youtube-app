@@ -161,7 +161,7 @@ const loginUser = asyncHandler(async (req, res) => {
         success: false,
         message: "Request body is missing. Make sure you are sending JSON and using express.json() middleware."
       })
-  }
+  } 
   const { email, username, password } = req.body;
   if ((!username && !email) || !password) {
     res

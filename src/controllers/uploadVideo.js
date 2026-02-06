@@ -4,6 +4,10 @@ import { unlink } from '../utils/unlinkSync.js'
 import fs from 'fs'
 import { asyncHandler } from '../utils/asynchandler.js'
 import { uploadOnCloudinary, deleteImageOnCloudinary, deleteVideoOnCloudinary } from '../utils/cloudinary.js';
+import { User } from '../models/user.model.js'
+
+
+
 
 //    uplaod new video 
 const uploadVideo = asyncHandler(async (req, res) => {
@@ -29,6 +33,10 @@ const uploadVideo = asyncHandler(async (req, res) => {
 
         if (thumbnail && video) { console.log("cloudinaty file uplaoding success", video) }
 
+
+        const ownerAvtar = await User.findById(req.user._id)
+        console.log(ownerAvtar.avatar)
+
         const uploadVideo = await Video.create({
 
             playback_url: video.playback_url,
@@ -42,6 +50,7 @@ const uploadVideo = asyncHandler(async (req, res) => {
             title: req.body.title,
             description: req.body.description,
             public: true,
+            ownerAvtar: ownerAvtar.avatar,
             owner: req.user._id
 
         })
@@ -75,6 +84,9 @@ const uploadVideo = asyncHandler(async (req, res) => {
 })
 
 
+
+
+
 //   get all videos 
 const getAllVideos = asyncHandler(async (req, res) => {
 
@@ -105,7 +117,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
             error: error.message,
         });
     }
-  
+
 })
 
 //   delete  Video 
@@ -198,4 +210,34 @@ const deleteTempPreview = asyncHandler(async (req, res) => {
 
 
 
-export { uploadVideo, getAllVideos, deleteVideo, tempUpload, deleteTempPreview }
+const getSingleVideo = async (req, res) => {
+  const videoId = req.params.id.trim();
+
+  try {
+    const video = await Video.findById(videoId);
+
+    if (!video) {
+      return res.status(404).json({
+        success: false,
+        message: "Video not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Fetch single video successful",
+      video
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message
+    });
+  }
+};
+
+
+
+export { uploadVideo, getAllVideos, deleteVideo, tempUpload, deleteTempPreview, getSingleVideo }
